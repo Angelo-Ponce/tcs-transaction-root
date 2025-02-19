@@ -22,7 +22,7 @@ public class MovementEntity {
     private Long movementId;
 
     @Column(name = "account_id", nullable = false)
-    private Integer accountId;
+    private Long accountId;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "movement_date", nullable = false)
@@ -40,8 +40,8 @@ public class MovementEntity {
     @Column(nullable = false, length = 1)
     private Boolean status;
 
-    @ManyToOne(fetch = FetchType.LAZY) // FK
-    @JoinColumn(name = "accoun_id", nullable = false, foreignKey = @ForeignKey(name = "FK_MOVEMENT_ACCOUNT"))
+    @ManyToOne(fetch = FetchType.EAGER) // FK
+    @JoinColumn(name = "account_id", referencedColumnName = "account_id", foreignKey = @ForeignKey(name = "FK_MOVEMENT_ACCOUNT"), insertable = false, updatable = false)
     private AccountEntity account;
 
     // Campos de auditoria

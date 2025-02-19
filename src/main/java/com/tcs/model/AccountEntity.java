@@ -19,6 +19,7 @@ public class AccountEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
+    @Column(name = "account_id")
     private Long accountId;
 
     @Column(name = "account_number", nullable = false, unique = true)
