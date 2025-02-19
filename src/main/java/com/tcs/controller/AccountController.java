@@ -22,7 +22,7 @@ public class AccountController {
     private final IAccountService service;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> findAll(){
         List<AccountDTO> list = service.findAll().stream()
                 .map(AccountMapper.INSTANCE::toAccountDTO).toList();

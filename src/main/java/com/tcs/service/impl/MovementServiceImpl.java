@@ -45,13 +45,14 @@ public class MovementServiceImpl extends CRUDImpl<MovementEntity, Long> implemen
 
         validMovement(request, balance);
 
-        // Actualizar el saldo inicial
-        accountEntity.setInitialBalance(balance);
         request.setAccountId(accountEntity.getAccountId());
         request.setMovementDate(new Date());
         request.setBalance(accountEntity.getInitialBalance());
         request.setStatus(Boolean.TRUE);
         save(request);
+
+        // Actualizar el saldo inicial
+        accountEntity.setInitialBalance(balance);
         accountEntity.setLastModifiedDate(new Date());
         accountEntity.setLastModifiedByUser("Angelo");
         this.accountService.save(accountEntity);
@@ -77,10 +78,10 @@ public class MovementServiceImpl extends CRUDImpl<MovementEntity, Long> implemen
                     .name(data.getAccount().getClient().getName())
                     .accountNumber(data.getAccount().getAccountNumber())
                     .accountType(data.getAccount().getAccountType())
-                    .initialBalance(data.getAccount().getInitialBalance())
+                    .initialBalance(data.getBalance())
                     .movementStatus(data.getStatus())
                     .movementValue(data.getMovementValue())
-                    .balance(data.getBalance())
+                    .balance(data.getAccount().getInitialBalance())
                     .build()
             ).toList()) ;
 
