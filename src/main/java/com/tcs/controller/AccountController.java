@@ -8,6 +8,7 @@ import com.tcs.service.IAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -21,6 +22,7 @@ public class AccountController {
     private final IAccountService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse> findAll(){
         List<AccountDTO> list = service.findAll().stream()
                 .map(AccountMapper.INSTANCE::toAccountDTO).toList();
@@ -29,6 +31,7 @@ public class AccountController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> getAccountById(@PathVariable("id") Long id) {
         AccountEntity entity = service.findById(id, "Account");
 
@@ -38,6 +41,7 @@ public class AccountController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> addAccount(@Valid @RequestBody AccountDTO request) {
         AccountEntity accountEntity = AccountMapper.INSTANCE.toAccountEntity(request);
         accountEntity.setCreatedDate(new Date());
@@ -48,6 +52,7 @@ public class AccountController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> updateAccount(@PathVariable("id") Long id,
                                                       @Valid @RequestBody AccountDTO dto) {
         dto.setAccountId(id);
@@ -59,6 +64,7 @@ public class AccountController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse> deleteAccount(@PathVariable("id") Long id) {
         // Eliminar registro
         //service.delete(id);

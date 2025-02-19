@@ -9,6 +9,7 @@ import com.tcs.service.IMovementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class MovementController {
     private final IMovementService service;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> findAll(){
         List<MovementDTO> list = service.findAll().stream()
                 .map(MovementMapper.INSTANCE::toMovementDTO).toList();
@@ -30,6 +32,7 @@ public class MovementController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> getMovementById(@PathVariable("id") Long id) {
         MovementEntity entity = service.findById(id, "Movements");
 
@@ -39,6 +42,7 @@ public class MovementController {
     }
 
     @GetMapping("/reportes")
+    @PreAuthorize("hasRole('ADMIN_ROLE')")
     public ResponseEntity<BaseResponse> reportMovementByDateAndClientId(@RequestParam(value = "clientId") String clientId,
                                                                         @RequestParam(value = "startDate") String startDate,
                                                                         @RequestParam(value = "endDate") String endDate) throws Exception {
@@ -47,12 +51,14 @@ public class MovementController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> addMovement(@Valid @RequestBody MovementDTO request) throws Exception {
         service.saveMovement(request);
         return ResponseEntity.ok(BaseResponse.builder().data(request).build());
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<BaseResponse> updateMovement(@PathVariable("id") Long id,
                                                        @Valid @RequestBody MovementDTO request){
         request.setMovementId(id);
@@ -65,6 +71,7 @@ public class MovementController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse> deleteAccount(@PathVariable("id") Long id) {
         // Eliminar registro
         //service.delete(id);
