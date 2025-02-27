@@ -1,6 +1,9 @@
 package com.tcs.service.impl;
 
+import com.tcs.constants.Constants;
 import com.tcs.dto.MovementReportDTO;
+import com.tcs.exception.ModelNotFoundException;
+import com.tcs.model.Account;
 import com.tcs.model.Movement;
 import com.tcs.repository.IGenericRepository;
 import com.tcs.repository.IMovementRepository;
@@ -31,28 +34,19 @@ public class MovementServiceImpl extends CRUDImpl<Movement, Long> implements IMo
 
     @Override
     public Mono<Movement> saveMovement(Movement movement) {
-        return accountService.findById(movement.getAccountId())
-                .switchIfEmpty(Mono.error(new RuntimeException("Cuenta no encontrada")))
+        // Validar el valor del movimiento
+        validateMovementValue(movement.getMovementValue());
+
+        return validateAccount(movement.getAccountId())
                 .flatMap(account -> {
                     BigDecimal balance = account.getInitialBalance().add(movement.getMovementValue());
                     // Validar si hay saldo disponible
                     if (balance.compareTo(BigDecimal.ZERO) < 0) {
-                        return Mono.error(new RuntimeException("Saldo no disponible"));
+                        return Mono.error(new ModelNotFoundException("Saldo no disponible"));
                     }
-                    if (movement.getMovementValue().compareTo(BigDecimal.ZERO) > 0) {
-                        movement.setMovementType("DEPOSITO");
-                    } else if(movement.getMovementValue().compareTo(BigDecimal.ZERO) < 0){
-                        movement.setMovementType("RETIRO");
-                    } else {
-                        return Mono.error(new RuntimeException("Movimiento no valido"));
-                    }
-                    movement.setAccountId(account.getAccountId());
-                    movement.setMovementDate(LocalDateTime.now());
-                    movement.setBalance(account.getInitialBalance());
-                    movement.setStatus(Boolean.TRUE);
-
+                    // Actualizar detalles del movimiento y la cuenta
+                    updateMovementDetails(movement, account, balance);
                     // Actualizar el saldo de la cuenta
-                    account.setInitialBalance(balance);
                     return accountService.save(account)
                             .then(repository.save(movement)); // Guardar el movimiento
                 });
@@ -110,4 +104,30 @@ public class MovementServiceImpl extends CRUDImpl<Movement, Long> implements IMo
 //        // Crear Date
 //        return Date.from(instant);
 //    }
+
+    private Mono<Account> validateAccount(Long accountId) {
+        return accountService.findById(accountId)
+                .switchIfEmpty(Mono.error(new ModelNotFoundException("Cuenta no encontrada")));
+    }
+
+    private void validateMovementValue(BigDecimal movementValue) {
+        if (movementValue.compareTo(BigDecimal.ZERO) == 0) {
+            throw new ModelNotFoundException("Movimiento no válido");
+        }
+    }
+
+    private String determineMovementType(BigDecimal movementValue) {
+        return movementValue.compareTo(BigDecimal.ZERO) > 0
+                ? Constants.DEPOSIT
+                : Constants.WITHDRAWAL;
+    }
+
+    private void updateMovementDetails(Movement movement, Account account, BigDecimal newBalance) {
+        movement.setMovementType(determineMovementType(movement.getMovementValue()));
+        movement.setAccountId(account.getAccountId());
+        movement.setMovementDate(LocalDateTime.now());
+        movement.setBalance(account.getInitialBalance());
+        movement.setStatus(Boolean.TRUE);
+        account.setInitialBalance(newBalance);
+    }
 }
