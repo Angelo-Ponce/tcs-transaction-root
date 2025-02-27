@@ -65,7 +65,7 @@ public class MovementController {
 //
 
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<MovementDTO>> update (@PathVariable("id") Long id, @RequestBody MovementDTO response) {
+    public Mono<ResponseEntity<MovementDTO>> update (@PathVariable("id") Long id, @Valid @RequestBody MovementDTO response) {
         return service.updateMovement(id, MovementMapper.INSTANCE.toMovement(response))
                 .map(e -> ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)

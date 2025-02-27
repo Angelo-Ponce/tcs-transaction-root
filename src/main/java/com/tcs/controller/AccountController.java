@@ -3,6 +3,7 @@ package com.tcs.controller;
 import com.tcs.dto.AccountDTO;
 import com.tcs.mappers.AccountMapper;
 import com.tcs.service.IAccountService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +42,7 @@ public class AccountController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<AccountDTO>> save(@RequestBody AccountDTO response, ServerHttpRequest req) {
+    public Mono<ResponseEntity<AccountDTO>> save(@Valid @RequestBody AccountDTO response, ServerHttpRequest req) {
         return service.save(AccountMapper.INSTANCE.toAccount(response))
                 .map(e -> {
                     URI location = URI.create(req.getURI().toString().concat("/").concat(e.getAccountId().toString()));
@@ -53,7 +54,7 @@ public class AccountController {
     }
 
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<AccountDTO>> update(@PathVariable("id") Long id, @RequestBody AccountDTO response) {
+    public Mono<ResponseEntity<AccountDTO>> update(@PathVariable("id") Long id, @Valid @RequestBody AccountDTO response) {
 
         return service.updateAccount(id, AccountMapper.INSTANCE.toAccount(response))
                 .map(AccountMapper.INSTANCE::toAccountDTO)
