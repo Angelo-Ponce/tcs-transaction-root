@@ -34,10 +34,9 @@ public class MovementServiceImpl extends CRUDImpl<Movement, Long> implements IMo
 
     @Override
     public Mono<Movement> saveMovement(Movement movement) {
-        // Validar el valor del movimiento
-        validateMovementValue(movement.getMovementValue());
 
-        return validateAccount(movement.getAccountId())
+        return validateMovementValue(movement.getMovementValue())
+                .then(validateAccount(movement.getAccountId()))
                 .flatMap(account -> {
                     BigDecimal balance = account.getInitialBalance().add(movement.getMovementValue());
                     // Validar si hay saldo disponible
@@ -110,10 +109,11 @@ public class MovementServiceImpl extends CRUDImpl<Movement, Long> implements IMo
                 .switchIfEmpty(Mono.error(new ModelNotFoundException("Cuenta no encontrada")));
     }
 
-    private void validateMovementValue(BigDecimal movementValue) {
+    private Mono<Void> validateMovementValue(BigDecimal movementValue) {
         if (movementValue.compareTo(BigDecimal.ZERO) == 0) {
-            throw new ModelNotFoundException("Movimiento no válido");
+            return Mono.error(new ModelNotFoundException("Movimiento no válido"));
         }
+        return Mono.empty();
     }
 
     private String determineMovementType(BigDecimal movementValue) {
