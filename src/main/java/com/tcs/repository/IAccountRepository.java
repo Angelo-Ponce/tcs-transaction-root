@@ -1,6 +1,9 @@
 package com.tcs.repository;
 
-import com.tcs.model.AccountEntity;
+import com.tcs.model.Account;
+import reactor.core.publisher.Mono;
 
-public interface IAccountRepository extends IGenericRepository<AccountEntity, Long> {
+public interface IAccountRepository extends IGenericRepository<Account, Long> {
+
+    Mono<Account> findByAccountNumber(String accountNumber);
 }

@@ -1,16 +1,13 @@
 package com.tcs.repository;
 
-import com.tcs.model.MovementEntity;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import com.tcs.model.Movement;
+import reactor.core.publisher.Flux;
 
-import java.util.Date;
-import java.util.List;
+public interface IMovementRepository extends IGenericRepository<Movement, Long>{
 
-public interface IMovementRepository extends IGenericRepository<MovementEntity, Long>{
-
-    @Query("select m FROM movement m where m.account.client.clientId = :clientId and m.movementDate between :startDate and :endDate")
-    List<MovementEntity> reportMovement(@Param("clientId") String clientId,
-                                        @Param("startDate") Date startDate,
-                                        @Param("endDate") Date endDate);
+    /*@Query("select m FROM movement m where m.account.client.clientId = :clientId and m.movementDate between :startDate and :endDate")
+    List<Movement> reportMovement(@Param("clientId") String clientId,
+                                  @Param("startDate") Date startDate,
+                                  @Param("endDate") Date endDate);*/
+    Flux<Movement> findByAccountId(Long accountId);
 }

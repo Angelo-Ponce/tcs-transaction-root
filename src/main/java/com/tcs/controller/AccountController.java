@@ -1,18 +1,17 @@
 package com.tcs.controller;
 
 import com.tcs.dto.AccountDTO;
-import com.tcs.dto.response.BaseResponse;
 import com.tcs.mappers.AccountMapper;
-import com.tcs.model.AccountEntity;
 import com.tcs.service.IAccountService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.Date;
-import java.util.List;
+import java.net.URI;
 
 @RestController
 @RequestMapping("api/v1/cuentas")
@@ -22,54 +21,70 @@ public class AccountController {
     private final IAccountService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public ResponseEntity<BaseResponse> findAll(){
-        List<AccountDTO> list = service.findAll().stream()
-                .map(AccountMapper.INSTANCE::toAccountDTO).toList();
+    public Mono<ResponseEntity<Flux<AccountDTO>>> findAll(){
+        Flux<AccountDTO> accountDTOFlux = service.findAll()
+                .map(AccountMapper.INSTANCE::toAccountDTO);
 
-        return ResponseEntity.ok(BaseResponse.builder().data(list).build());
+        return Mono.just(
+                        ResponseEntity.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(accountDTOFlux))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public ResponseEntity<BaseResponse> getAccountById(@PathVariable("id") Long id) {
-        AccountEntity entity = service.findById(id, "Account");
-
-        return ResponseEntity.ok(BaseResponse.builder()
-                .data(AccountMapper.INSTANCE.toAccountDTO(entity))
-                .build());
+    public Mono<ResponseEntity<AccountDTO>> findById(@PathVariable("id") Long id) {
+        return service.findById(id)
+                .map(AccountMapper.INSTANCE::toAccountDTO)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public ResponseEntity<BaseResponse> addAccount(@Valid @RequestBody AccountDTO request) {
-        AccountEntity accountEntity = AccountMapper.INSTANCE.toAccountEntity(request);
-        accountEntity.setCreatedDate(new Date());
-        accountEntity.setCreatedByUser("Angelo");
-        AccountEntity account = service.save(accountEntity);
-
-        return ResponseEntity.ok(BaseResponse.builder().data(AccountMapper.INSTANCE.toAccountDTO(account)).build());
+    public Mono<ResponseEntity<AccountDTO>> save(@RequestBody AccountDTO response, ServerHttpRequest req) {
+        return service.save(AccountMapper.INSTANCE.toAccount(response))
+                .map(e -> {
+                    URI location = URI.create(req.getURI().toString().concat("/").concat(e.getAccountId().toString()));
+                    return ResponseEntity.created(location)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(AccountMapper.INSTANCE.toAccountDTO(e));
+                })
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public ResponseEntity<BaseResponse> updateAccount(@PathVariable("id") Long id,
-                                                      @Valid @RequestBody AccountDTO dto) {
-        dto.setAccountId(id);
-        AccountEntity accountEntity = AccountMapper.INSTANCE.toAccountEntity(dto);
-        accountEntity.setLastModifiedDate(new Date());
-        accountEntity.setLastModifiedByUser("Angelo");
-        AccountEntity entity = service.update(id, accountEntity);
-        return ResponseEntity.ok(BaseResponse.builder().data(AccountMapper.INSTANCE.toAccountDTO(entity)).build());
+    public Mono<ResponseEntity<AccountDTO>> update(@PathVariable("id") Long id, @RequestBody AccountDTO response) {
+
+        return service.updateAccount(id, AccountMapper.INSTANCE.toAccount(response))
+                .map(AccountMapper.INSTANCE::toAccountDTO)
+                .map(e -> ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(e)
+                )
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BaseResponse> deleteAccount(@PathVariable("id") Long id) {
-        // Eliminar registro
-        //service.delete(id);
-        // Eliminado logico
-        service.deleteLogic(id);
-        return ResponseEntity.noContent().build();
+    public Mono<ResponseEntity<Void>> delete(@PathVariable("id") Long id) {
+        return service.deleteById(id)
+                .flatMap( result -> {
+                    if (Boolean.TRUE.equals(result)){
+                        return Mono.just(ResponseEntity.noContent().build());
+                    } else {
+                        return Mono.just(ResponseEntity.notFound().build());
+                    }
+                });
+    }
+
+    @DeleteMapping("/deletelogic/{id}")
+    public Mono<ResponseEntity<Void>> deleteLogic(@PathVariable("id") Long id) {
+        return service.deleteLogic(id)
+                .flatMap( result -> {
+                    if(Boolean.TRUE.equals(result)) {
+                        return Mono.just(ResponseEntity.noContent().build());
+                    } else {
+                        return Mono.just(ResponseEntity.notFound().build());
+                    }
+                });
     }
 }

@@ -1,7 +1,7 @@
 package com.tcs.mappers;
 
 import com.tcs.dto.MovementDTO;
-import com.tcs.model.MovementEntity;
+import com.tcs.model.Movement;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -10,7 +10,7 @@ public interface MovementMapper {
 
     MovementMapper INSTANCE = Mappers.getMapper(MovementMapper.class);
 
-    MovementDTO toMovementDTO(MovementEntity movement);
+    MovementDTO toMovementDTO(Movement movement);
 
-    MovementEntity toMovement(MovementDTO movementDTO);
+    Movement toMovement(MovementDTO movementDTO);
 }

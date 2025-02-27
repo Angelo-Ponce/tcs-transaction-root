@@ -1,17 +1,19 @@
 package com.tcs.service;
 
-import com.tcs.dto.MovementDTO;
 import com.tcs.dto.MovementReportDTO;
-import com.tcs.model.MovementEntity;
+import com.tcs.model.Movement;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-public interface IMovementService extends ICRUD<MovementEntity, Long> {
+public interface IMovementService extends ICRUDService<Movement, Long> {
 
-    void saveMovement(MovementDTO request);
+    Mono<Movement> saveMovement(Movement request);
 
-    void deleteLogic(Long id);
+    Mono<Movement> updateMovement(Long id, Movement request);
+
+    Mono<Boolean> deleteLogic(Long id);
 
     /**
      * Report movement by date and client id
@@ -21,5 +23,5 @@ public interface IMovementService extends ICRUD<MovementEntity, Long> {
      * @return
      * @throws Exception
      */
-    List<MovementReportDTO> reportMovementByDateAndClientId(String clientId, LocalDateTime startDate, LocalDateTime endDate) throws Exception;
+    Flux<MovementReportDTO> reportMovementByDateAndClientId(String clientId, LocalDateTime startDate, LocalDateTime endDate) throws Exception;
 }

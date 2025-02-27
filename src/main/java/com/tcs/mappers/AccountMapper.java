@@ -1,7 +1,7 @@
 package com.tcs.mappers;
 
 import com.tcs.dto.AccountDTO;
-import com.tcs.model.AccountEntity;
+import com.tcs.model.Account;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -10,7 +10,7 @@ public interface AccountMapper {
 
     AccountMapper INSTANCE = Mappers.getMapper(AccountMapper.class);
 
-    AccountDTO toAccountDTO(AccountEntity account);
+    AccountDTO toAccountDTO(Account account);
 
-    AccountEntity toAccountEntity(AccountDTO accountDTO);
+    Account toAccount(AccountDTO accountDTO);
 }
