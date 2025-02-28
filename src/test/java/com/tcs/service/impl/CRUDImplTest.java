@@ -1,21 +1,17 @@
 package com.tcs.service.impl;
 
-import com.tcs.exception.ModelNotFoundException;
 import com.tcs.repository.IGenericRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.times;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -23,11 +19,9 @@ class CRUDImplTest {
 
     private static class TestEntity {
         private Long id;
-        private String name;
 
-        public TestEntity(Long id, String name) {
+        public TestEntity(Long id) {
             this.id = id;
-            this.name = name;
         }
     }
 
@@ -36,7 +30,7 @@ class CRUDImplTest {
 
     private CRUDImpl<TestEntity, Long> service;
 
-    private final TestEntity mockEntity = new TestEntity(1L, "Angelo");
+    private final TestEntity mockEntity = new TestEntity(1L);
 
     @BeforeEach
     void setUp() {
@@ -50,70 +44,60 @@ class CRUDImplTest {
 
     @Test
     void givenSave_ThenSuccessfullySaveTheEntity_WhenTheEntityHasData() {
-        when(mockRepository.save(mockEntity)).thenReturn(mockEntity);
-        TestEntity result = service.save(mockEntity);
-        assertNotNull(result);
-        assertEquals(mockEntity.id, result.id);
+        when(mockRepository.save(mockEntity)).thenReturn(Mono.just(mockEntity));
+        Mono<TestEntity> result = service.save(mockEntity);
+        StepVerifier.create(result)
+                .expectNextMatches(saveClient -> saveClient.id.equals(1L))
+                .verifyComplete();
         verify(mockRepository, times(1)).save(mockEntity);
     }
 
     @Test
-    void givenUpdateEntity_WhenEntityExists_ThenReturnUpdatedEntity(){
-        when(mockRepository.save(any())).thenReturn(mockEntity);
-        TestEntity updatedEntity = service.update(mockEntity.id, mockEntity);
-        assertNotNull(updatedEntity);
-        verify(mockRepository, times(1)).save(any());
-    }
-
-    @Test
     void givenFindAll_ThenReturnAllEntities() {
-        when(mockRepository.findAll()).thenReturn(java.util.List.of(mockEntity));
-        java.util.List<TestEntity> result = service.findAll();
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(mockEntity.id, result.getFirst().id);
-        assertEquals(mockEntity.name, result.getFirst().name);
+        when(mockRepository.findAll()).thenReturn(Flux.just(mockEntity));
+
+        Flux<TestEntity> result = service.findAll();
+        StepVerifier.create(result)
+                .expectNext(mockEntity)
+                .verifyComplete();
         verify(mockRepository, times(1)).findAll();
     }
 
     @Test
     void givenFindById_WhenEntityExists_ThenReturnEntity() {
-        when(mockRepository.findById(mockEntity.id)).thenReturn(Optional.of(mockEntity));
-        TestEntity result = service.findById(mockEntity.id, "findById");
-        assertNotNull(result);
-        assertEquals(mockEntity.id, result.id);
+        when(mockRepository.findById(mockEntity.id)).thenReturn(Mono.just(mockEntity));
+
+        Mono<TestEntity> result = service.findById(mockEntity.id);
+        StepVerifier.create(result)
+                .expectNext(mockEntity)
+                .verifyComplete();
         verify(mockRepository, times(1)).findById(anyLong());
     }
 
     @Test
-    void givenFindById_WhenEntityDoesNotExist_ThenThrowModelNotFoundException (){
-        Long id = 5L;
-        when(mockRepository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(
-                ModelNotFoundException.class,
-                () -> service.findById(id, "findById"),
-                "ID not found: " + id
-        );
-        verify(mockRepository, times(1)).findById(id);
-    }
-
-    @Test
     void givenDelete_WhenEntityExists_ThenDeleteEntity() {
-        when(mockRepository.findById(mockEntity.id)).thenReturn(Optional.of(mockEntity));
-        service.delete(mockEntity.id);
+        when(mockRepository.findById(mockEntity.id)).thenReturn(Mono.just(mockEntity));
+        when(mockRepository.deleteById(mockEntity.id)).thenReturn(Mono.empty());
+
+        Mono<Boolean> result = service.deleteById(mockEntity.id);
+        StepVerifier.create(result)
+                .expectNext(true)
+                .verifyComplete();
         verify(mockRepository, times(1)).findById(anyLong());
         verify(mockRepository, times(1)).deleteById(anyLong());
     }
 
     @Test
-    void givenDelete_WhenEntityDoesNotExist_ThenThrowModelNotFoundException() {
-        Long id = 5L;
-        when(mockRepository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(
-                ModelNotFoundException.class,
-                () -> service.delete(id),
-                "ID not found: " + id
-        );
-        verify(mockRepository, times(1)).findById(id);
+    void givenDelete_WhenEntityDoesNotExist_ThenReturnFalse() {
+        when(mockRepository.findById(mockEntity.id)).thenReturn(Mono.empty());
+
+        Mono<Boolean> result = service.deleteById(1L);
+
+        StepVerifier.create(result)
+                .expectNext(false)
+                .verifyComplete();
+
+        verify(mockRepository, times(1)).findById(mockEntity.id);
+        verify(mockRepository, never()).deleteById(anyLong());
     }
 }

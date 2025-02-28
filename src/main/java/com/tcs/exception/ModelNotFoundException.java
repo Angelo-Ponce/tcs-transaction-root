@@ -1,9 +1,10 @@
 package com.tcs.exception;
 
-public class ModelNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
-    // Se obliga en sobreescribir el contructor
+public class ModelNotFoundException extends ResponseStatusException {
     public ModelNotFoundException(String message) {
-        super(message);
+        super(HttpStatus.BAD_REQUEST, message);
     }
 }

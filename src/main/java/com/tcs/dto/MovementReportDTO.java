@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @SuperBuilder
@@ -16,13 +16,13 @@ import java.util.Date;
 public class MovementReportDTO {
 
     @JsonProperty("Fecha")
-    private Date movementDate;
+    private LocalDateTime movementDate;
 
     @JsonProperty("Cliente")
     private String name;
 
     @JsonProperty("NumeroCuenta")
-    private Integer accountNumber;
+    private String accountNumber;
 
     @JsonProperty("Tipo")
     private String accountType;

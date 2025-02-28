@@ -2,13 +2,8 @@ package com.tcs.config;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
-
-import java.util.Locale;
 
 public class MessageConfig {
 
@@ -19,7 +14,7 @@ public class MessageConfig {
         //apunta los archivos llamados messages
         messageSource.setBasename("classpath:messages");
         // usar cuando tenemos algun encoding como tildes o caracteres
-        //messageSource.setDefaultEncoding("UTF-8");
+        messageSource.setDefaultEncoding("UTF-8");
         return messageSource;
     }
 
@@ -32,15 +27,10 @@ public class MessageConfig {
     }
 
     //Establecer un default locale
-    // singleton = una sola instancia
-    // prototype = varias instancias
-    @Bean
-    @Scope("prototype")
-    public LocaleResolver localeResolver() {
-        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.ROOT);
-        //localeResolver.setDefaultLocale(Locale.ENGLISH);
-        //localeResolver.setDefaultLocale(Locale.FRANCE);
-        return localeResolver;
-    }
+//     @Bean
+//    public LocaleContextResolver localeContextResolver() {
+//        AcceptHeaderLocaleContextResolver resolver = new AcceptHeaderLocaleContextResolver();
+//        resolver.setDefaultLocale(Locale.US); // Idioma por defecto (inglés)
+//        return resolver;
+//    }
 }
