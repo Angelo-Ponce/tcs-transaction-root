@@ -1,6 +1,7 @@
 package com.tcs.service.impl;
 
 import com.tcs.constants.Constants;
+import com.tcs.dto.ClientDTO;
 import com.tcs.dto.MovementReportDTO;
 import com.tcs.exception.ModelNotFoundException;
 import com.tcs.model.Account;
@@ -26,6 +27,8 @@ public class MovementServiceImpl extends CRUDImpl<Movement, Long> implements IMo
     private final IMovementRepository repository;
 
     private final IAccountService accountService;
+
+    private final ClienteService clienteService;
 
     @Override
     protected IGenericRepository<Movement, Long> getRepository() {
@@ -75,34 +78,25 @@ public class MovementServiceImpl extends CRUDImpl<Movement, Long> implements IMo
     }
 
     @Override
-    public Flux<MovementReportDTO> reportMovementByDateAndClientId(String clientId, LocalDateTime startDate, LocalDateTime endDate) throws Exception {
-        return Flux.empty();
-//        List<Movement> movementVo = this.repository.reportMovement(clientId, getDateTransform(startDate), getDateTransform(endDate));
-//        List<MovementReportDTO> reportVos = new ArrayList<>();
-//        if (!movementVo.isEmpty()) {
-//            reportVos.addAll(movementVo.stream().map( data -> MovementReportDTO.builder()
-//                    .movementDate(data.getMovementDate())
-//                    .name(data.getAccount().getClient().getName())
-//                    .accountNumber(data.getAccount().getAccountNumber())
-//                    .accountType(data.getAccount().getAccountType())
-//                    .initialBalance(data.getBalance())
-//                    .movementStatus(data.getStatus())
-//                    .movementValue(data.getMovementValue())
-//                    .balance(data.getAccount().getInitialBalance())
-//                    .build()
-//            ).toList());
-//        }
-//        return reportVos;
+    public Flux<MovementReportDTO> reportMovementByDateAndClientId(String clientId, LocalDateTime startDate, LocalDateTime endDate, String authToken) {
+        return clienteService.findByClientId(clientId, authToken)
+                .flatMapMany(client -> accountService.findByPersonId(client.getPersonId())
+                        .flatMap(account -> repository.findByAccountIdAndMovementDateBetween(account.getAccountId(), startDate, endDate)
+                                .map(movement -> mapToReporteDTO(client, account, movement)))
+                );
     }
-//
-//    private Date getDateTransform ( LocalDateTime localDateTime ){
-//        // Convertir a ZonedDateTime
-//        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.systemDefault());
-//        // Convertir a Instant
-//        Instant instant = zonedDateTime.toInstant();
-//        // Crear Date
-//        return Date.from(instant);
-//    }
+
+    private MovementReportDTO mapToReporteDTO(ClientDTO client, Account account ,Movement movement) {
+        return MovementReportDTO.builder()
+                .movementDate(movement.getMovementDate())
+                .name(client.getName())
+                .accountNumber(account.getAccountNumber())
+                .accountType(account.getAccountType())
+                .initialBalance(movement.getBalance())
+                .movementStatus(movement.getStatus())
+                .balance(account.getInitialBalance())
+                .build();
+    }
 
     private Mono<Account> validateAccount(Long accountId) {
         return accountService.findById(accountId)

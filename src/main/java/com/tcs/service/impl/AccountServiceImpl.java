@@ -6,6 +6,7 @@ import com.tcs.repository.IGenericRepository;
 import com.tcs.service.IAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -17,6 +18,11 @@ public class AccountServiceImpl extends CRUDImpl<Account, Long> implements IAcco
     @Override
     protected IGenericRepository<Account, Long> getRepository() {
         return repository;
+    }
+
+    @Override
+    public Flux<Account> findByPersonId(Long personId) {
+        return repository.findByPersonId(personId);
     }
 
     @Override

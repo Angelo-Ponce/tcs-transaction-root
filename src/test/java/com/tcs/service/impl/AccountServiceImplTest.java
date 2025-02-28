@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -29,6 +30,25 @@ class AccountServiceImplTest {
     @Test
     void givenGetRepository_WhenCalled_ThenReturnCorrectRepositoryInstance() {
         assertEquals(mockRepository, service.getRepository());
+    }
+
+    @Test
+    void givenFindByPersonId_WhenEntityExists_ThenReturnEntity(){
+        Account mockAccount = Account.builder()
+                .accountId(1L)
+                .accountNumber("654321")
+                .accountType("AHORRO")
+                .initialBalance(BigDecimal.valueOf(20))
+                .status(true)
+                .personId(12L)
+                .build();
+
+        when(mockRepository.findByPersonId(mockAccount.getPersonId())).thenReturn(Flux.just(mockAccount));
+        Flux<Account> result = service.findByPersonId(mockAccount.getPersonId());
+        StepVerifier.create(result)
+                .expectNext(mockAccount)
+                .verifyComplete();
+        verify(mockRepository, times(1)).findByPersonId(mockAccount.getPersonId());
     }
 
     @Test

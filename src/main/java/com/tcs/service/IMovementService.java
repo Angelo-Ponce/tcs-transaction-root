@@ -20,8 +20,6 @@ public interface IMovementService extends ICRUDService<Movement, Long> {
      * @param clientId client id
      * @param startDate start date
      * @param endDate end date
-     * @return
-     * @throws Exception
      */
-    Flux<MovementReportDTO> reportMovementByDateAndClientId(String clientId, LocalDateTime startDate, LocalDateTime endDate) throws Exception;
+    Flux<MovementReportDTO> reportMovementByDateAndClientId(String clientId, LocalDateTime startDate, LocalDateTime endDate, String authToken);
 }

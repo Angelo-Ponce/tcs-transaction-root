@@ -1,6 +1,7 @@
 package com.tcs.controller;
 
 import com.tcs.dto.MovementDTO;
+import com.tcs.dto.MovementReportDTO;
 import com.tcs.mappers.MovementMapper;
 import com.tcs.service.IMovementService;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("api/v1/movimientos")
@@ -53,16 +55,19 @@ public class MovementController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-//
-//    @GetMapping("/reportes")
-//    @PreAuthorize("hasRole('ADMIN_ROLE')")
-//    public ResponseEntity<BaseResponse> reportMovementByDateAndClientId(@RequestParam(value = "clientId") String clientId,
-//                                                                        @RequestParam(value = "startDate") String startDate,
-//                                                                        @RequestParam(value = "endDate") String endDate) throws Exception {
-//        List<MovementReportDTO> movementReportVo = service.reportMovementByDateAndClientId(clientId, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate));
-//        return ResponseEntity.ok(BaseResponse.builder().data(movementReportVo).build());
-//    }
-//
+    @GetMapping("/reportes")
+    public Mono<ResponseEntity<Flux<MovementReportDTO>>> reportMovementByDateAndClientId(@RequestParam(value = "clientId") String clientId,
+                                                                                         @RequestParam(value = "startDate") LocalDateTime startDate,
+                                                                                         @RequestParam(value = "endDate") LocalDateTime endDate,
+                                                                                         ServerHttpRequest request) {
+        String authToken = request.getHeaders().getFirst("Authorization");
+        Flux<MovementReportDTO> movementReportVo = service.reportMovementByDateAndClientId(clientId, startDate, endDate, authToken);
+        return Mono.just(
+                        ResponseEntity.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(movementReportVo))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
 
     @PutMapping("/{id}")
     public Mono<ResponseEntity<MovementDTO>> update (@PathVariable("id") Long id, @Valid @RequestBody MovementDTO response) {

@@ -1,6 +1,7 @@
 package com.tcs.service.impl;
 
 import com.tcs.constants.Constants;
+import com.tcs.dto.ClientDTO;
 import com.tcs.exception.ModelNotFoundException;
 import com.tcs.model.Account;
 import com.tcs.model.Movement;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -31,8 +33,15 @@ class MovementServiceImplTest {
     @Mock
     private IAccountService accountService;
 
+    @Mock
+    private ClienteService clienteService;
+
     @InjectMocks
     private MovementServiceImpl movementService;
+
+
+    private final LocalDateTime startDate = LocalDateTime.of(2025, 2, 1, 0, 0);
+    private final LocalDateTime enddate = LocalDateTime.of(2025, 2, 19, 23, 59);
 
     @Test
     void givenGetRepository_WhenCalled_ThenReturnCorrectRepositoryInstance() {
@@ -205,5 +214,63 @@ class MovementServiceImplTest {
 
         verify(mockRepository, times(1)).findById(id);
         verify(mockRepository, never()).save(any());
+    }
+
+    @Test
+    void givenReportMovement_WhenCliendIdExists_ThenReturnMovement() {
+        String authToken = "Bearer test-token";
+        ClientDTO mockClient = ClientDTO.builder()
+                .personId(1L)
+                .identificacion("654321")
+                .name("Joel")
+                .gender("Masculino")
+                .age(20)
+                .address("Guayaquil")
+                .phone("0999")
+                .clientId("joel")
+                .password("123456")
+                .status(true)
+                .build();
+
+        Account mockAccount = new Account();
+        mockAccount.setPersonId(1L);
+        mockAccount.setAccountId(1L);
+        mockAccount.setAccountNumber("123456789");
+        mockAccount.setAccountType("AHORRO");
+        mockAccount.setInitialBalance(new BigDecimal("500.00"));
+
+        Movement mockMovement = Movement.builder()
+                .accountId(1L)
+                .movementDate(LocalDateTime.now())
+                .movementType("DEPOSITO")
+                .movementValue(BigDecimal.valueOf(20))
+                .balance(BigDecimal.valueOf(20))
+                .status(true)
+                .build();
+
+        when(clienteService.findByClientId(mockClient.getClientId(), authToken))
+                .thenReturn(Mono.just(mockClient));
+
+        when(accountService.findByPersonId(mockClient.getPersonId()))
+                .thenReturn(Flux.just(mockAccount));
+
+        when(mockRepository.findByAccountIdAndMovementDateBetween(mockAccount.getAccountId(), startDate, enddate))
+                .thenReturn(Flux.just(mockMovement));
+
+        StepVerifier.create(movementService.reportMovementByDateAndClientId(mockClient.getClientId(), startDate, enddate, authToken))
+                .expectNextMatches(report ->
+                        report.getName().equals("Joel") &&
+                                report.getAccountNumber().equals("123456789") &&
+                                report.getAccountType().equals("AHORRO") &&
+                                report.getInitialBalance().equals(mockMovement.getBalance()) &&
+                                report.getMovementStatus().equals(true) &&
+                                report.getBalance().equals(mockAccount.getInitialBalance())
+                )
+                .verifyComplete();
+
+        // Assert - Verificar que los mocks fueron llamados correctamente
+        verify(clienteService).findByClientId(mockClient.getClientId(), authToken);
+        verify(accountService).findByPersonId(mockClient.getPersonId());
+        verify(mockRepository).findByAccountIdAndMovementDateBetween(mockAccount.getAccountId(), startDate, enddate);
     }
 }
